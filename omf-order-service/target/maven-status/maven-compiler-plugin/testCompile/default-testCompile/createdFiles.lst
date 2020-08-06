@@ -1,0 +1,7 @@
+com\omforderservice\controller\OrderControllerTest.class
+com\omforderservice\service\ItemServiceTest.class
+com\omforderservice\service\JwtAuthenticationServiceTest.class
+com\omforderservice\controller\JwtControllerTest.class
+com\omforderservice\service\OrderServiceTest.class
+com\omforderservice\configuration\RestTemplateConfigurationTest.class
+com\omforderservice\configuration\SwaggerDocketConfigurationTest.class

@@ -1,0 +1,226 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>OrderServiceImpl.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">omf-order-service</a> &gt; <a href="index.source.html" class="el_package">com.omforderservice.service</a> &gt; <span class="el_source">OrderServiceImpl.java</span></div><h1>OrderServiceImpl.java</h1><pre class="source lang-java linenums">package com.omforderservice.service;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.converter.FormHttpMessageConverter;
+import org.springframework.http.converter.HttpMessageConverter;
+import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
+import org.springframework.stereotype.Service;
+import org.springframework.web.client.ResourceAccessException;
+import org.springframework.web.client.RestTemplate;
+
+import com.netflix.hystrix.contrib.javanica.annotation.HystrixCommand;
+import com.omforderservice.dto.ItemFetchDto;
+import com.omforderservice.dto.OrderRequestDto;
+import com.omforderservice.dto.OrderUpdateDto;
+import com.omforderservice.dto.OrderUpdateResponseDto;
+import com.omforderservice.dto.OrderedItemsDto;
+import com.omforderservice.exception.OrderException;
+import com.omforderservice.model.Order;
+import com.omforderservice.model.OrderedItem;
+import com.omforderservice.repository.OrderRepository;
+
+
+@Service
+<span class="fc" id="L31">public class OrderServiceImpl implements OrderService {</span>
+
+
+	@Autowired
+	OrderRepository orderRepository;
+
+
+	@Autowired
+	ItemService itemService;
+
+	@Value(&quot;${restaurant.search.item.url}&quot;)
+	private String restaurantServiceItemUrl;
+
+	@Autowired
+	RestTemplate restTemplate;
+
+<span class="fc" id="L47">	private static final Logger logger = LoggerFactory.getLogger(OrderServiceImpl.class);</span>
+
+
+	@Override
+	@HystrixCommand(fallbackMethod = &quot;orderFallBack&quot;)
+	public Order placeOrder(OrderRequestDto orderRequest) throws OrderException {
+<span class="fc" id="L53">		logger.debug(&quot;In place order method, creating order object to persist&quot;);</span>
+<span class="fc" id="L54">		Order order = new Order(orderRequest.getCustomerId(), &quot;CREATED&quot;, orderRequest.getRestaurantId());</span>
+<span class="fc" id="L55">		logger.debug(&quot;saving order in db&quot;);</span>
+<span class="fc" id="L56">		Order savedOrder = orderRepository.save(order);</span>
+<span class="fc" id="L57">		logger.debug(&quot;Getting all ordered items to persist&quot;);</span>
+<span class="fc" id="L58">		List&lt;OrderedItemsDto&gt; itemsDtoList = orderRequest.getItems();</span>
+<span class="fc bfc" id="L59" title="All 2 branches covered.">		for(OrderedItemsDto itemDto: itemsDtoList) {</span>
+<span class="fc" id="L60">			MappingJackson2HttpMessageConverter map = new MappingJackson2HttpMessageConverter();</span>
+<span class="fc" id="L61">			List&lt;HttpMessageConverter&lt;?&gt;&gt; messageConverters = new ArrayList&lt;HttpMessageConverter&lt;?&gt;&gt;();</span>
+<span class="fc" id="L62">			messageConverters.add(map);</span>
+<span class="fc" id="L63">			messageConverters.add(new FormHttpMessageConverter());</span>
+<span class="fc" id="L64">			restTemplate.setMessageConverters(messageConverters);</span>
+			try {
+<span class="fc" id="L66">				logger.debug(&quot;Calling restaurant search service to get item details&quot;);</span>
+<span class="fc" id="L67">				ItemFetchDto item = restTemplate.getForObject(restaurantServiceItemUrl+itemDto.getItemId(), ItemFetchDto.class);</span>
+
+<span class="fc bfc" id="L69" title="All 2 branches covered.">				if(item==null ) {</span>
+
+<span class="fc" id="L71">					orderRepository.delete(order);</span>
+<span class="fc" id="L72">					throw new OrderException(&quot;Item not found&quot;);</span>
+
+				} 
+<span class="fc bfc" id="L75" title="All 2 branches covered.">				if(!(item.getMenu().getRestaurant().getId().equals(order.getRestaurantId()))) {</span>
+					// handle exception here later.
+<span class="fc" id="L77">					orderRepository.delete(order);</span>
+<span class="fc" id="L78">					throw new OrderException(&quot;Item not in given restaurant&quot;);</span>
+				}
+<span class="fc bfc" id="L80" title="All 2 branches covered.">				if( itemDto.getQuantity()&lt;=0) {</span>
+<span class="fc" id="L81">					orderRepository.delete(order);</span>
+<span class="fc" id="L82">					throw new OrderException(&quot;Quantity of item cannot be 0&quot;);</span>
+				}
+<span class="fc" id="L84">				OrderedItem itemToPersist = new OrderedItem(item.getName(), itemDto.getQuantity(), item.getPrice(),savedOrder, item.getId());</span>
+<span class="fc" id="L85">				itemService.saveItem(itemToPersist);</span>
+			} 
+<span class="nc" id="L87">			catch(ResourceAccessException e) {</span>
+<span class="nc" id="L88">				throw new OrderException(&quot;Something went wrong, looks &quot;</span>
+						+ &quot;like restaurant is currently not accepting orders&quot;);
+<span class="fc" id="L90">			}</span>
+<span class="fc" id="L91">		}</span>
+<span class="fc" id="L92">		logger.debug(&quot;Saved order to db&quot;);</span>
+<span class="fc" id="L93">		return savedOrder;</span>
+	}
+	
+	/**
+	 * If restaurant service is down, then it will throw Internal Server Error
+	 * 
+	 * @param order
+	 * 
+	 * @return {@link Order}
+	 */
+	public Order orderFallBack(OrderRequestDto orderRequestDto) {
+		//Order fallBackOrder = new Order();
+<span class="nc" id="L105">		Order order = new Order();</span>
+<span class="nc" id="L106">		order.setStatus(&quot;FallBack&quot;);</span>
+<span class="nc" id="L107">		System.out.println(&quot;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt; FallBack &gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&quot;);</span>
+<span class="nc" id="L108">		return order;</span>
+	}
+
+	@Override
+	public boolean cancelOrder(Long orderId) {
+<span class="fc" id="L113">		logger.debug(&quot;In cancel order service method, calling repository&quot;);</span>
+<span class="fc" id="L114">		Optional&lt;Order&gt; order = orderRepository.findById(orderId);</span>
+<span class="fc bfc" id="L115" title="All 2 branches covered.">		if(order.isPresent()) {</span>
+<span class="fc" id="L116">			logger.debug(&quot;Order was found in db&quot;);</span>
+<span class="fc" id="L117">			order.get().setStatus(&quot;CANCELLED&quot;);</span>
+<span class="fc" id="L118">			orderRepository.save(order.get());</span>
+<span class="fc" id="L119">			return true;</span>
+		}
+		else {
+<span class="fc" id="L122">			logger.debug(&quot;Order not found&quot;);</span>
+<span class="fc" id="L123">			return false;</span>
+		}
+
+	}
+
+	@Override
+	public Optional&lt;Order&gt; getOrderById(Long id) {
+<span class="fc" id="L130">		return orderRepository.findById(id);</span>
+	}
+
+	@Override
+	public double getOrderAmountByOrderId(Long id) {
+
+<span class="fc" id="L136">		Optional&lt;Order&gt; order = orderRepository.findById(id);</span>
+<span class="fc bfc" id="L137" title="All 2 branches covered.">		if(order.isPresent()) {</span>
+<span class="fc" id="L138">			List&lt;OrderedItem&gt; itemsOrdered= itemService.findbyOrderId(id);</span>
+<span class="fc" id="L139">			double total=0;</span>
+<span class="fc bfc" id="L140" title="All 2 branches covered.">			for(OrderedItem item: itemsOrdered) {</span>
+<span class="fc" id="L141">				total = total+(item.getPrice()*item.getQuantity());</span>
+<span class="fc" id="L142">			}</span>
+<span class="fc" id="L143">			return total;</span>
+		}
+		else {
+			// handle exception here later.
+<span class="fc" id="L147">			return 0;</span>
+		}
+
+
+	}
+
+	@Override
+	public OrderUpdateResponseDto updateOrder(OrderUpdateDto orderUpdateRequest) throws OrderException {
+
+<span class="fc" id="L156">		Order order = new Order(orderUpdateRequest.getCustomerId(), &quot;UPDATED&quot;, orderUpdateRequest.getRestaurantId());</span>
+<span class="fc" id="L157">		Optional&lt;Order&gt; previouslyPersistedOrder = orderRepository.findById(orderUpdateRequest.getOrderId());</span>
+
+<span class="fc bfc" id="L159" title="All 2 branches covered.">		if(!previouslyPersistedOrder.isPresent()) {</span>
+			// handle exception properly later
+<span class="fc" id="L161">			throw new OrderException(&quot;Update Failed, respective order not found&quot;);</span>
+		}
+<span class="fc bfc" id="L163" title="All 2 branches covered.">		if(!(orderUpdateRequest.getRestaurantId().equals(previouslyPersistedOrder.get().getRestaurantId() ))) {</span>
+			// handle exception properly later
+<span class="fc" id="L165">			throw new OrderException(&quot;Update Failed, cannot change restaurants while updating order&quot;);</span>
+
+		}
+<span class="fc" id="L168">		List&lt;OrderedItem&gt; previouslyOrderedItems= itemService.findbyOrderId(previouslyPersistedOrder.get().getId());</span>
+<span class="fc" id="L169">		order.setId(previouslyPersistedOrder.get().getId());</span>
+<span class="fc" id="L170">		order.setCreateDateTime(previouslyPersistedOrder.get().getCreateDateTime());</span>
+<span class="fc" id="L171">		List&lt;OrderedItemsDto&gt; itemsDtoList = orderUpdateRequest.getItems();</span>
+<span class="fc" id="L172">		List&lt;OrderedItem&gt; updateItemsListToReturn = new ArrayList&lt;&gt;();</span>
+<span class="fc bfc" id="L173" title="All 2 branches covered.">		for(OrderedItemsDto itemDto: itemsDtoList) {</span>
+<span class="fc" id="L174">			MappingJackson2HttpMessageConverter map = new MappingJackson2HttpMessageConverter();</span>
+<span class="fc" id="L175">			List&lt;HttpMessageConverter&lt;?&gt;&gt; messageConverters = new ArrayList&lt;HttpMessageConverter&lt;?&gt;&gt;();</span>
+<span class="fc" id="L176">			messageConverters.add(map);</span>
+<span class="fc" id="L177">			messageConverters.add(new FormHttpMessageConverter());</span>
+<span class="fc" id="L178">			restTemplate.setMessageConverters(messageConverters);</span>
+			try {
+<span class="fc" id="L180">				ItemFetchDto item = restTemplate.getForObject(restaurantServiceItemUrl+itemDto.getItemId(), ItemFetchDto.class);</span>
+<span class="fc bfc" id="L181" title="All 2 branches covered.">				if(item==null ) {</span>
+					// deleting previously updated items 
+<span class="pc bpc" id="L183" title="1 of 2 branches missed.">					for(OrderedItem itemsUpdateToBeReverted: updateItemsListToReturn) {</span>
+<span class="nc" id="L184">						itemService.deleteItemsById(itemsUpdateToBeReverted.getId());</span>
+<span class="nc" id="L185">					}</span>
+<span class="fc" id="L186">					throw new OrderException(&quot;Update Failed, item not found in menu&quot;);</span>
+				}
+<span class="fc bfc" id="L188" title="All 2 branches covered.">				if(item.getMenu().getRestaurant().getId()!=order.getRestaurantId() ) {</span>
+					// deleting previously updated items 
+<span class="pc bpc" id="L190" title="1 of 2 branches missed.">					for(OrderedItem itemsUpdateToBeReverted: updateItemsListToReturn) {</span>
+<span class="nc" id="L191">						itemService.deleteItemsById(itemsUpdateToBeReverted.getId());</span>
+<span class="nc" id="L192">					}</span>
+<span class="fc" id="L193">					throw new OrderException(&quot;Update Failed, item does not belong to respective restaurant&quot;);</span>
+				}
+
+<span class="fc bfc" id="L196" title="All 2 branches covered.">				if(itemDto.getQuantity()&lt;=0 ) {</span>
+					// deleting previously updated items 
+<span class="pc bpc" id="L198" title="1 of 2 branches missed.">					for(OrderedItem itemsUpdateToBeReverted: updateItemsListToReturn) {</span>
+<span class="nc" id="L199">						itemService.deleteItemsById(itemsUpdateToBeReverted.getId());</span>
+<span class="nc" id="L200">					}</span>
+<span class="fc" id="L201">					throw new OrderException(&quot;Update Failed, quantity cannot be zero&quot;);</span>
+				}
+
+<span class="fc" id="L204">				OrderedItem itemToPersist = new OrderedItem(item.getName(), itemDto.getQuantity(), item.getPrice(),previouslyPersistedOrder.get(), item.getId());</span>
+<span class="fc" id="L205">				itemToPersist.setId(itemDto.getItemId());</span>
+<span class="fc" id="L206">				OrderedItem savedItem = itemService.saveItem(itemToPersist);</span>
+<span class="fc" id="L207">				updateItemsListToReturn.add(savedItem);</span>
+			}
+<span class="nc" id="L209">			catch(ResourceAccessException e) {</span>
+<span class="nc" id="L210">				throw new OrderException(&quot;Something went wrong, looks &quot;</span>
+						+ &quot;like restaurant is currently not operatable&quot;);
+<span class="fc" id="L212">			}</span>
+
+<span class="fc" id="L214">		}</span>
+<span class="pc bpc" id="L215" title="1 of 2 branches missed.">		for(OrderedItem previouslyOrderedItem: previouslyOrderedItems) {</span>
+<span class="nc" id="L216">			itemService.deleteItemsById(previouslyOrderedItem.getId());</span>
+<span class="nc" id="L217">		}</span>
+<span class="fc" id="L218">		Order savedOrder = orderRepository.save(order);</span>
+
+<span class="fc" id="L220">		return new OrderUpdateResponseDto(savedOrder.getId(), savedOrder.getCustomerId(), savedOrder.getStatus(), savedOrder.getRestaurantId(),updateItemsListToReturn );</span>
+
+
+	}
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.5.201910111838</span></div></body></html>

@@ -1,0 +1,10 @@
+Manifest-Version: 1.0
+Built-By: M1052581
+Build-Jdk: 11.0.7
+Implementation-Title: omf-order-service
+Implementation-Version: 0.0.1-SNAPSHOT
+Implementation-Vendor-Id: com
+Implementation-URL: https://projects.spring.io/spring-boot/#/spring-boot
+ -starter-parent/omf-order-service
+Created-By: Maven Integration for Eclipse
+

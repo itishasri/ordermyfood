@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Order.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">omf-order-service</a> &gt; <a href="index.source.html" class="el_package">com.omforderservice.model</a> &gt; <span class="el_source">Order.java</span></div><h1>Order.java</h1><pre class="source lang-java linenums">package com.omforderservice.model;
+
+import java.time.LocalDateTime;
+
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.Table;
+
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
+
+@Entity
+@Table(name=&quot;orders&quot;)
+public class Order {
+	
+	@Id
+	@GeneratedValue(strategy= GenerationType.IDENTITY)
+	private Long id;
+	private Long customerId;
+	private String status;
+	private Long restaurantId;
+	
+	@CreationTimestamp
+    private LocalDateTime createDateTime;
+    @UpdateTimestamp
+    private LocalDateTime updateDateTime;
+    
+<span class="fc" id="L30">    public Order() {}</span>
+<span class="fc" id="L31">	public Order(Long customerId, String status, Long restaurantId) {</span>
+<span class="fc" id="L32">		this.customerId = customerId;</span>
+<span class="fc" id="L33">		this.status = status;</span>
+<span class="fc" id="L34">		this.restaurantId = restaurantId;</span>
+<span class="fc" id="L35">	}</span>
+	public Long getId() {
+<span class="fc" id="L37">		return id;</span>
+	}
+	public void setId(Long id) {
+<span class="fc" id="L40">		this.id = id;</span>
+<span class="fc" id="L41">	}</span>
+	public Long getCustomerId() {
+<span class="fc" id="L43">		return customerId;</span>
+	}
+	public void setCustomerId(Long customerId) {
+<span class="fc" id="L46">		this.customerId = customerId;</span>
+<span class="fc" id="L47">	}</span>
+	public String getStatus() {
+<span class="fc" id="L49">		return status;</span>
+	}
+	public void setStatus(String status) {
+<span class="fc" id="L52">		this.status = status;</span>
+<span class="fc" id="L53">	}</span>
+	public Long getRestaurantId() {
+<span class="fc" id="L55">		return restaurantId;</span>
+	}
+	public void setRestaurantId(Long restaurantId) {
+<span class="nc" id="L58">		this.restaurantId = restaurantId;</span>
+<span class="nc" id="L59">	}</span>
+	public LocalDateTime getCreateDateTime() {
+<span class="fc" id="L61">		return createDateTime;</span>
+	}
+	public void setCreateDateTime(LocalDateTime createDateTime) {
+<span class="fc" id="L64">		this.createDateTime = createDateTime;</span>
+<span class="fc" id="L65">	}</span>
+	public LocalDateTime getUpdateDateTime() {
+<span class="fc" id="L67">		return updateDateTime;</span>
+	}
+	public void setUpdateDateTime(LocalDateTime updateDateTime) {
+<span class="nc" id="L70">		this.updateDateTime = updateDateTime;</span>
+<span class="nc" id="L71">	}</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.5.201910111838</span></div></body></html>

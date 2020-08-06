@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>OrderUpdateDto.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">omf-order-service</a> &gt; <a href="index.source.html" class="el_package">com.omforderservice.dto</a> &gt; <span class="el_source">OrderUpdateDto.java</span></div><h1>OrderUpdateDto.java</h1><pre class="source lang-java linenums">package com.omforderservice.dto;
+
+import java.util.List;
+
+public class OrderUpdateDto {
+	
+	private Long customerId;
+	private Long restaurantId;
+	private List&lt;OrderedItemsDto&gt; items;
+	private Long orderId;
+	
+<span class="fc" id="L12">	public OrderUpdateDto() {}</span>
+	
+	public OrderUpdateDto(Long customerId, Long restaurantId, List&lt;OrderedItemsDto&gt; items, Long orderId) {
+<span class="fc" id="L15">		super();</span>
+<span class="fc" id="L16">		this.customerId = customerId;</span>
+<span class="fc" id="L17">		this.restaurantId = restaurantId;</span>
+<span class="fc" id="L18">		this.items = items;</span>
+<span class="fc" id="L19">		this.orderId = orderId;</span>
+<span class="fc" id="L20">	}</span>
+
+	public Long getCustomerId() {
+<span class="fc" id="L23">		return customerId;</span>
+	}
+
+	public void setCustomerId(Long customerId) {
+<span class="fc" id="L27">		this.customerId = customerId;</span>
+<span class="fc" id="L28">	}</span>
+
+	public Long getRestaurantId() {
+<span class="fc" id="L31">		return restaurantId;</span>
+	}
+
+	public void setRestaurantId(Long restaurantId) {
+<span class="fc" id="L35">		this.restaurantId = restaurantId;</span>
+<span class="fc" id="L36">	}</span>
+
+	public List&lt;OrderedItemsDto&gt; getItems() {
+<span class="fc" id="L39">		return items;</span>
+	}
+
+	public void setItems(List&lt;OrderedItemsDto&gt; items) {
+<span class="fc" id="L43">		this.items = items;</span>
+<span class="fc" id="L44">	}</span>
+
+	public Long getOrderId() {
+<span class="fc" id="L47">		return orderId;</span>
+	}
+
+	public void setOrderId(Long orderId) {
+<span class="fc" id="L51">		this.orderId = orderId;</span>
+<span class="fc" id="L52">	}</span>
+	
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.5.201910111838</span></div></body></html>

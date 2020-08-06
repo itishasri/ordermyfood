@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MenuItemController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">omf-search-service</a> &gt; <a href="index.source.html" class="el_package">com.omfsearchservice.controller</a> &gt; <span class="el_source">MenuItemController.java</span></div><h1>MenuItemController.java</h1><pre class="source lang-java linenums">package com.omfsearchservice.controller;
+
+import java.util.List;
+import java.util.Optional;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.omfsearchservice.dto.ItemRequestDto;
+import com.omfsearchservice.exception.ItemNotFoundException;
+import com.omfsearchservice.model.MenuItem;
+import com.omfsearchservice.model.Restaurant;
+import com.omfsearchservice.service.MenuItemService;
+
+@RestController
+<span class="fc" id="L26">public class MenuItemController {</span>
+
+
+	@Autowired
+	MenuItemService menuItemService;
+<span class="fc" id="L31">	private static final Logger logger = LoggerFactory.getLogger(MenuItemController.class);</span>
+
+	
+	@PostMapping(&quot;/item&quot;)
+	public ResponseEntity&lt;String&gt; addItemsToRestaurantMenu(@RequestHeader String authorization,@RequestBody ItemRequestDto itemRequestDto){
+
+<span class="fc" id="L37">		logger.debug(&quot;In addItemsToRestaurantMenu method&quot;);</span>
+<span class="fc" id="L38">		menuItemService.saveMenuItem(itemRequestDto);</span>
+<span class="fc" id="L39">		logger.debug(&quot;Item added successfully&quot;);</span>
+<span class="fc" id="L40">		return ResponseEntity</span>
+<span class="fc" id="L41">				.status(HttpStatus.OK)</span>
+<span class="fc" id="L42">				.body(&quot;Item Added successfully&quot;);</span>
+	}
+
+	@GetMapping(&quot;/restaurant/item/name/{name}&quot;)
+	public ResponseEntity&lt;List&lt;Restaurant&gt;&gt; getRestaurantsContainingItem(@RequestHeader String authorization,@PathVariable String name, @RequestParam(defaultValue=&quot;1&quot;) int pagenumber,@RequestParam(defaultValue=&quot;10&quot;) int pagesize) throws  ItemNotFoundException{
+<span class="fc" id="L47">		logger.debug(&quot;In getRestaurantsContainingItem method, calling service&quot;);</span>
+<span class="fc" id="L48">		return ResponseEntity</span>
+<span class="fc" id="L49">				.status(HttpStatus.OK)</span>
+<span class="fc" id="L50">				.body(menuItemService.findByName(name, pagenumber, pagesize));</span>
+
+	}
+
+	@GetMapping(&quot;/item/id/{id}&quot;)
+	public ResponseEntity&lt;MenuItem&gt; getItemById( @PathVariable Long id) throws ItemNotFoundException{
+<span class="fc" id="L56">		logger.debug(&quot;In getItemById method, calling service&quot;);</span>
+<span class="fc" id="L57">		Optional&lt;MenuItem&gt; item = menuItemService.findById(id);</span>
+<span class="fc bfc" id="L58" title="All 2 branches covered.">		if(item.isPresent()) {</span>
+<span class="fc" id="L59">			logger.debug(&quot;got the item&quot;);</span>
+
+<span class="fc" id="L61">			return ResponseEntity</span>
+<span class="fc" id="L62">					.status(HttpStatus.OK)</span>
+<span class="fc" id="L63">					.body(item.get());</span>
+		}
+		else {
+<span class="fc" id="L66">			logger.debug(&quot;Item not found&quot;);</span>
+<span class="fc" id="L67">			throw new ItemNotFoundException(&quot;No Item found for specified inputs&quot;);</span>
+		}
+	}
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.5.201910111838</span></div></body></html>

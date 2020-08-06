@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MenuItemServiceImpl.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">omf-search-service</a> &gt; <a href="index.source.html" class="el_package">com.omfsearchservice.service</a> &gt; <span class="el_source">MenuItemServiceImpl.java</span></div><h1>MenuItemServiceImpl.java</h1><pre class="source lang-java linenums">package com.omfsearchservice.service;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+
+import com.omfsearchservice.dto.ItemRequestDto;
+import com.omfsearchservice.exception.ItemNotFoundException;
+import com.omfsearchservice.exception.MenuNotSavedException;
+import com.omfsearchservice.exception.RestaurantBadRequestException;
+import com.omfsearchservice.model.Menu;
+import com.omfsearchservice.model.MenuItem;
+import com.omfsearchservice.model.Restaurant;
+import com.omfsearchservice.repository.MenuItemRepository;
+
+@Service
+<span class="fc" id="L26">public class MenuItemServiceImpl implements MenuItemService {</span>
+	
+<span class="fc" id="L28">	private static final Logger logger = LoggerFactory.getLogger(MenuItemServiceImpl.class);</span>
+
+	
+	@Autowired
+	private MenuItemRepository menuItemRepository;
+
+	@Autowired
+	private MenuService menuService;
+
+	@Autowired
+	private RestaurantService restaurantService;
+
+	@Override
+	public MenuItem saveMenuItem(ItemRequestDto itemDto) {
+<span class="fc" id="L42">		logger.debug(&quot;In save menu Item method, calling repo&quot;);</span>
+
+<span class="fc" id="L44">		Optional&lt;Menu&gt; menu =  menuService.getMenuById(itemDto.getMenuId());</span>
+<span class="fc bfc" id="L45" title="All 2 branches covered.">		if(menu.isPresent()) {</span>
+<span class="fc" id="L46">			logger.debug(&quot;Found correponding menu, saving menu item&quot;);</span>
+<span class="fc" id="L47">		MenuItem menuItem = new MenuItem(itemDto.getName(), itemDto.getDescription(), itemDto.getPrice(), menu.get());</span>
+<span class="fc" id="L48">		return menuItemRepository.save(menuItem);</span>
+		}
+		else {
+<span class="fc" id="L51">			logger.debug(&quot;Correponding menu not found&quot;);</span>
+<span class="fc" id="L52">			throw new MenuNotSavedException(&quot;Menu not saved, something went wrong&quot;);</span>
+		}
+	}
+
+	@Override
+	@Cacheable(value=&quot;menuitemsbyname&quot;)
+	public List&lt;Restaurant&gt; findByName(String name, int pagenumber, int pagesize) throws ItemNotFoundException   {
+		
+<span class="fc" id="L60">		logger.debug(&quot;In findByName, creating pageable&quot;</span>
+				+ &quot; object for page Number:&quot;+pagenumber+&quot; and page size: &quot;+ pagesize);
+		
+<span class="fc" id="L63">		Pageable pageable = PageRequest.of(pagenumber-1, pagesize);</span>
+<span class="fc" id="L64">		logger.debug(&quot;Calling repo to find menu items&quot;);</span>
+<span class="fc" id="L65">		Page&lt;MenuItem&gt; menuItems =  menuItemRepository.findByNameContaining(name, pageable);</span>
+<span class="fc bfc" id="L66" title="All 2 branches covered.">		if(menuItems.hasContent()) {</span>
+<span class="fc" id="L67">		List&lt;Restaurant&gt; restaurantsToReturn = new ArrayList&lt;&gt;();</span>
+<span class="fc bfc" id="L68" title="All 2 branches covered.">		for(MenuItem item: menuItems) {</span>
+		
+			
+			
+<span class="fc" id="L72">			Optional&lt;Menu&gt; menu = menuService.getMenuById(item.getMenu().getId());</span>
+<span class="fc bfc" id="L73" title="All 2 branches covered.">			if(menu.isPresent()) {</span>
+<span class="fc" id="L74">				logger.debug(&quot;Menu is present calling restaurant service to find restaurant by id&quot;);</span>
+<span class="fc" id="L75">				restaurantsToReturn.add(restaurantService.findById(menu.get().getRestaurant().getId()));</span>
+			}
+			else {
+<span class="fc" id="L78">				logger.debug(&quot;No restaurants found, something went wrong&quot;);</span>
+<span class="fc" id="L79">					throw new RestaurantBadRequestException(&quot;No restaurants found, something went wrong&quot;);</span>
+			
+			}
+<span class="pc bpc" id="L82" title="1 of 2 branches missed.">			if(restaurantsToReturn.size()&gt;=pagesize) {</span>
+				
+<span class="nc" id="L84">				break;</span>
+			}
+
+<span class="fc" id="L87">		}</span>
+<span class="fc" id="L88">		return restaurantsToReturn;</span>
+		}
+		else {
+<span class="fc" id="L91">			logger.debug(&quot;Items given are not present in any restaurant&quot;);</span>
+<span class="fc" id="L92">			throw new ItemNotFoundException(&quot;Items given are not present in any restaurant&quot;);</span>
+		}
+
+
+	}
+
+	@Override
+	@Cacheable(value=&quot;menuitems&quot;)
+	public Optional&lt;MenuItem&gt; findById(Long id) {
+<span class="fc" id="L101">		return menuItemRepository.findById(id);</span>
+	}
+
+	@Override
+	@Cacheable(value=&quot;menuitemsbymenuid&quot;)
+	public Page&lt;MenuItem&gt; findByMenuId(Long id, Pageable pageable) {
+<span class="fc" id="L107">		logger.debug(&quot;In findByMenuId, calling repository&quot;);</span>
+<span class="fc" id="L108">		return menuItemRepository.findByMenu_id(id, pageable);</span>
+	}
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.5.201910111838</span></div></body></html>

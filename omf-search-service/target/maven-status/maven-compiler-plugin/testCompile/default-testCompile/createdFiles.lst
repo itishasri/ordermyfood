@@ -1,0 +1,10 @@
+com\omfsearchservice\service\JwtAuthenticationServiceTest.class
+com\omfsearchservice\repository\RestaurantRepositoryTest.class
+com\omfsearchservice\service\RestaurantServiceTest.class
+com\omfsearchservice\service\MenuServiceTest.class
+com\omfsearchservice\config\TestPropertyConfigs.class
+com\omfsearchservice\controller\MenuItemControllerTest.class
+com\omfsearchservice\config\SwaggerDocketConfigurationTest.class
+com\omfsearchservice\controller\JwtControllerTest.class
+com\omfsearchservice\service\MenuItemServiceTest.class
+com\omfsearchservice\controller\RestaurantControllerTest.class
